@@ -20,6 +20,5 @@ void addItem(ArrayList *list, TYPE_T toAdd);
 void addItemAt(ArrayList *list, TYPE_T toAdd, int index);
 TYPE_T removeItem(ArrayList *list);
 TYPE_T removeItemAt(ArrayList *list, int index);
-void printList(ArrayList *list); // this won't work for all types; may have to change it for your type
 
 #endif
