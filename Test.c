@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
   printList(&myList);
   
   deleteArrayList(&myList);
-  //printf("test3\n");
   return EXIT_SUCCESS;
 }
 

@@ -6,11 +6,15 @@
 static void expand(ArrayList *list);
 static void shrink(ArrayList *list);
 
+// ERROR HANDLING:
+
+// at: return pointer to value, return null if error
+// remove: delete a range of values, not just one.  Return error info.
+// pop_back: return error info
+
 /**********/
 /* PUBLIC */
 /**********/
-
-// should get(index) check whether index is valid or not?
 
 // note: storing array will never go smaller than size 2
 
@@ -34,72 +38,81 @@ void deleteArrayList(ArrayList *list) {
 }
 
 /* read the element at the argument index */
-TYPE_T get(ArrayList *list, int index) {
-  if ((index > list -> elements) || (index < 0)) {
+/*TYPE_T get(ArrayList *list, int index) {
+  if ((index > list->elements) || (index < 0)) {
     fprintf(stderr, "\nError: index to read item at is not valid.");
     exit(EXIT_FAILURE);
   }
-  return list -> data[index];
+  return list->data[index];
+}*/
+TYPE_T* at(ArrayList* list, int index) {
+  if ((index > list->elements) || (index < 0)) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "\nError: index to read item at is not valid.");
+#endif
+    return NULL;
+  }
+  return &(list->data[index]);
 }
 
 /* add an item to the list (adds to the end) */
-void addItem(ArrayList *list, TYPE_T toAdd) {
-  if (list -> elements == list -> arraySize) {
+void addItem(ArrayList* list, TYPE_T toAdd) {
+  if (list->elements == list->arraySize) {
     expand(list);
   }
-  list -> data[list -> elements] = toAdd;
-  list -> elements ++;
+  list -> data[list->elements] = toAdd;
+  list -> elements++;
 }
 
 /* add an item to the list at the index specified */
 /* the item already at that index and all following items are shifted up one index */
-void addItemAt(ArrayList *list, TYPE_T toAdd, int index) {
+void addItemAt(ArrayList* list, TYPE_T toAdd, int index) {
   int i;
-  if ((index > list -> elements) || (index < 0)) {
+  if ((index > list->elements) || (index < 0)) {
     fprintf(stderr, "\nError: index to add item at is not valid.");
     exit(1);
   }
-  if (list -> elements == list -> arraySize) {
+  if (list->elements == list->arraySize) {
     expand(list);
   }
-  for (i = (list -> elements) - 1; i >= index; i--) {
-    list -> data[i+1] = list -> data[i];
+  for (i = (list->elements) - 1; i >= index; i--) {
+    list->data[i+1] = list->data[i];
   }
-  list -> data[index] = toAdd;
-  list -> elements ++;
+  list->data[index] = toAdd;
+  list->elements++;
 }
 
 /* remove an item from the list (removes the last one) */
-TYPE_T removeItem(ArrayList *list) {
-  if (list -> elements == 0) {
+TYPE_T removeItem(ArrayList* list) {
+  if (list->elements == 0) {
     fprintf(stderr, "\nError: tried to remove from an empty list.");
     exit(EXIT_FAILURE);
   }
-  if ((list -> elements) - 1 < (list -> arraySize) / 4) {
+  if ((list->elements) - 1 < (list->arraySize) / 4) {
     shrink(list);
   }
-  TYPE_T result = (list -> data)[(list -> elements) - 1];
-  list -> elements --;
+  TYPE_T result = (list->data)[(list->elements) - 1];
+  list->elements--;
   return result;
 }
 
 /* remove an item at the specified index from the list */
 /* items at a higher index are shifted down one */
-TYPE_T removeItemAt(ArrayList *list, int index) {
-  if ((index >= list -> elements) || (index < 0)) {
+TYPE_T removeItemAt(ArrayList* list, int index) {
+  if ((index >= list->elements) || (index < 0)) {
     fprintf(stderr, "\nError: index to remove item from is not valid.");
     exit(EXIT_FAILURE);
   }
   int i;
-  if ((list -> elements) - 1 < (list -> arraySize) / 4) {
+  if ((list->elements) - 1 < (list->arraySize) / 4) {
     shrink(list);
   }
-  TYPE_T result = (list -> data)[index];
-  for (i = index; i < (list -> elements) - 1; i++) {
-    list -> data[i] = list -> data[i+1];
+  TYPE_T result = (list->data)[index];
+  for (i = index; i < (list->elements) - 1; i++) {
+    list->data[i] = list->data[i+1];
   }
   // quicker to store data in function?
-  list -> elements --;
+  list->elements--;
   return result;
 }
 
@@ -109,24 +122,24 @@ TYPE_T removeItemAt(ArrayList *list, int index) {
 
 /* double the size of the storing array */
 /* called when the storing array is full */
-static void expand(ArrayList *list) {
-  int newSize = (list -> arraySize) * 2;
-  list -> data = (TYPE_T*)realloc((void*)list -> data, newSize * DATA_SIZE);
-  if (list -> data == 0) {
+static void expand(ArrayList* list) {
+  int newSize = (list->arraySize) * 2;
+  list->data = (TYPE_T*)realloc((void*)list->data, newSize * DATA_SIZE);
+  if (list->data == 0) {
     fprintf(stderr, "\nError allocating memory.");
     exit(EXIT_FAILURE);
   }
-  list -> arraySize = newSize;
+  list->arraySize = newSize;
 }
 
 /* cut the size of the storing array in half */
 /* called when the storing array is less than 1/4 full */
-static void shrink(ArrayList *list) {
-  int newSize = (list -> arraySize) / 2;
-  list -> data = (TYPE_T*)realloc((void*)list -> data, newSize * DATA_SIZE);
-  if (list -> data == 0) {
+static void shrink(ArrayList* list) {
+  int newSize = (list->arraySize) / 2;
+  list->data = (TYPE_T*)realloc((void*)list->data, newSize * DATA_SIZE);
+  if (list->data == 0) {
     fprintf(stderr, "\nError allocating memory.");
     exit(EXIT_FAILURE);
   }
-  list -> arraySize = newSize;
+  list->arraySize = newSize;
 }

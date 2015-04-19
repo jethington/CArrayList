@@ -15,10 +15,11 @@ typedef struct ArrayList_struct {
 
 ArrayList newArrayList();
 void deleteArrayList(ArrayList *list);
-TYPE_T get(ArrayList *list, int index);
-void addItem(ArrayList *list, TYPE_T toAdd);
-void addItemAt(ArrayList *list, TYPE_T toAdd, int index);
-TYPE_T removeItem(ArrayList *list);
-TYPE_T removeItemAt(ArrayList *list, int index);
+//TYPE_T get(ArrayList* list, int index);
+TYPE_T* at(ArrayList* list, int index);
+void addItem(ArrayList* list, TYPE_T toAdd);
+void addItemAt(ArrayList* list, TYPE_T toAdd, int index);
+TYPE_T removeItem(ArrayList* list);
+TYPE_T removeItemAt(ArrayList* list, int index);
 
 #endif
