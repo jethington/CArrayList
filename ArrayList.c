@@ -1,32 +1,31 @@
-#include <stdlib.h>
+#define ARRAYLIST_DEBUG
+
+#ifdef ARRAYLIST_DEBUG
 #include <stdio.h>
+#endif
+#include <stdlib.h>
 
 #include "ArrayList.h"
 
 static void expand(ArrayList *list);
 static void shrink(ArrayList *list);
 
-// ERROR HANDLING:
-
-// at: return pointer to value, return null if error
-// remove: delete a range of values, not just one.  Return error info.
-// pop_back: return error info
-
 /**********/
 /* PUBLIC */
 /**********/
 
 // note: storing array will never go smaller than size 2
+//   -> are you sure? write a test
 
 /* constructor */
 ArrayList newArrayList() {
   ArrayList a;
   a.elements = 0;
-  a.arraySize = STARTING_SIZE;
+  a.array_size = STARTING_SIZE;
   a.data = (TYPE_T*)malloc(STARTING_SIZE * DATA_SIZE);
-  if (a.data == 0) {
-    fprintf(stderr, "\nError allocating memory.");
-    exit(EXIT_FAILURE);
+  if (a.data == NULL) {
+    fprintf(stderr, "Error allocating memory during newArrayList().\n");
+    //exit(-1);
   }
   return a;
 }
@@ -46,9 +45,9 @@ void deleteArrayList(ArrayList *list) {
   return list->data[index];
 }*/
 TYPE_T* at(ArrayList* list, int index) {
-  if ((index > list->elements) || (index < 0)) {
-#ifdef VECTOR_DEBUG
-    fprintf(stderr, "\nError: index to read item at is not valid.");
+  if ((index >= list->elements) || (index < 0)) {
+#ifdef ARRAYLIST_DEBUG
+    fprintf(stderr, "Error: index to read item at is not valid.\n");
 #endif
     return NULL;
   }
@@ -57,7 +56,7 @@ TYPE_T* at(ArrayList* list, int index) {
 
 /* add an item to the list (adds to the end) */
 void addItem(ArrayList* list, TYPE_T toAdd) {
-  if (list->elements == list->arraySize) {
+  if (list->elements == list->array_size) {
     expand(list);
   }
   list -> data[list->elements] = toAdd;
@@ -67,15 +66,15 @@ void addItem(ArrayList* list, TYPE_T toAdd) {
 /* add an item to the list at the index specified */
 /* the item already at that index and all following items are shifted up one index */
 void addItemAt(ArrayList* list, TYPE_T toAdd, int index) {
-  int i;
+  //int i;
   if ((index > list->elements) || (index < 0)) {
-    fprintf(stderr, "\nError: index to add item at is not valid.");
-    exit(1);
+    fprintf(stderr, "Error: index to add item at is not valid.\n");
+    //exit(-1);
   }
-  if (list->elements == list->arraySize) {
+  if (list->elements == list->array_size) {
     expand(list);
   }
-  for (i = (list->elements) - 1; i >= index; i--) {
+  for (int i = (list->elements) - 1; i >= index; i--) {
     list->data[i+1] = list->data[i];
   }
   list->data[index] = toAdd;
@@ -85,10 +84,10 @@ void addItemAt(ArrayList* list, TYPE_T toAdd, int index) {
 /* remove an item from the list (removes the last one) */
 TYPE_T removeItem(ArrayList* list) {
   if (list->elements == 0) {
-    fprintf(stderr, "\nError: tried to remove from an empty list.");
-    exit(EXIT_FAILURE);
+    fprintf(stderr, "Error: tried to remove from an empty list.\n");
+    //exit(-1);
   }
-  if ((list->elements) - 1 < (list->arraySize) / 4) {
+  if ((list->elements) - 1 < (list->array_size) / 4) {
     shrink(list);
   }
   TYPE_T result = (list->data)[(list->elements) - 1];
@@ -98,7 +97,7 @@ TYPE_T removeItem(ArrayList* list) {
 
 /* remove an item at the specified index from the list */
 /* items at a higher index are shifted down one */
-TYPE_T removeItemAt(ArrayList* list, int index) {
+/*TYPE_T removeItemAt(ArrayList* list, int index) {
   if ((index >= list->elements) || (index < 0)) {
     fprintf(stderr, "\nError: index to remove item from is not valid.");
     exit(EXIT_FAILURE);
@@ -114,6 +113,48 @@ TYPE_T removeItemAt(ArrayList* list, int index) {
   // quicker to store data in function?
   list->elements--;
   return result;
+}*/
+
+/* removes all items in the range [first, last), including first but not last */
+/* returns true if the function was successful, or false if there was an error */
+// return 0 on success instead? -> return an error enum
+bool erase(ArrayList* list, int first, int last) {
+  if (first >= last) { // first == last should be valid?
+#ifdef ARRAYLIST_DEBUG
+    fprintf(stderr, "Error: first index is higher than last index.\n");
+#endif
+    return false;
+  }
+  if ((first + last) > list->elements) { // first + last == elements -> error?
+#ifdef ARRAYLIST_DEBUG
+#endif
+    return false;
+  }
+  if ((first < 0) || (last < 0)) { //still need this to avoid error on underflow??
+#ifdef ARRAYLIST_DEBUG
+#endif
+    return false;
+  }
+
+  int remove_length = last - first;
+  int new_size = list->elements - (last - first); // remove(0, 5) should remove 0..4, so 5 elements total
+
+  //int i;
+  for (int i = first; i < new_size; i++) {
+    list->data[i] = list->data[i+remove_length];
+  }
+
+  if (new_size < (list->array_size) / 4) {
+    shrink(list);
+  }
+  list->elements = new_size;
+  //for (i = index; i < (list->elements) - 1; i++) {
+  //  list->data[i] = list->data[i+1];
+  //}
+  // quicker to store data in function?
+  //list->elements--;
+  //return result;
+  return true;
 }
 
 /***********/
@@ -123,23 +164,27 @@ TYPE_T removeItemAt(ArrayList* list, int index) {
 /* double the size of the storing array */
 /* called when the storing array is full */
 static void expand(ArrayList* list) {
-  int newSize = (list->arraySize) * 2;
-  list->data = (TYPE_T*)realloc((void*)list->data, newSize * DATA_SIZE);
+  int new_size = (list->array_size) * 2;
+  list->data = (TYPE_T*)realloc((void*)list->data, new_size * DATA_SIZE);
   if (list->data == 0) {
-    fprintf(stderr, "\nError allocating memory.");
-    exit(EXIT_FAILURE);
+#ifdef ARRAYLIST_DEBUG
+    fprintf(stderr, "Error allocating memory during expand().\n");
+#endif
+    //exit(EXIT_FAILURE);
   }
-  list->arraySize = newSize;
+  list->array_size = new_size;
 }
 
 /* cut the size of the storing array in half */
 /* called when the storing array is less than 1/4 full */
 static void shrink(ArrayList* list) {
-  int newSize = (list->arraySize) / 2;
-  list->data = (TYPE_T*)realloc((void*)list->data, newSize * DATA_SIZE);
+  int new_size = (list->array_size) / 2;
+  list->data = (TYPE_T*)realloc((void*)list->data, new_size * DATA_SIZE);
   if (list->data == 0) {
-    fprintf(stderr, "\nError allocating memory.");
-    exit(EXIT_FAILURE);
+#ifdef ARRAYLIST_DEBUG
+    fprintf(stderr, "Error allocating memory during shrink().\n");
+#endif
+    //exit(EXIT_FAILURE);
   }
-  list->arraySize = newSize;
+  list->array_size = new_size;
 }
