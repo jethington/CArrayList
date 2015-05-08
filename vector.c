@@ -1,14 +1,15 @@
-#define ARRAYLIST_DEBUG
+#define VECTOR_DEBUG
 
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
 #include <stdio.h>
 #endif
 #include <stdlib.h>
+#include <string.h>
 
-#include "ArrayList.h"
+#include "vector.h"
 
-static void expand(ArrayList *list);
-static void shrink(ArrayList *list);
+static void expand(vector *list);
+static void shrink(vector *list);
 
 /**********/
 /* PUBLIC */
@@ -17,38 +18,41 @@ static void shrink(ArrayList *list);
 // note: storing array will never go smaller than size 2
 
 /* constructor */
-ArrayList newArrayList() {
-  ArrayList a;
+vector new_vector() {
+  vector a;
   a.elements = 0;
   a.array_size = STARTING_SIZE;
-  a.data = (TYPE_T*)malloc(STARTING_SIZE * DATA_SIZE);
-#ifdef ARRAYLIST_DEBUG
+  a.data = (TYPE_T*)malloc(STARTING_SIZE * sizeof(TYPE_T));
+#ifdef VECTOR_DEBUG
   if (a.data == NULL) {
-    fprintf(stderr, "Error allocating memory during newArrayList().\n");
+    fprintf(stderr, "Error allocating memory during new_vector().\n");
   }
 #endif
   return a;
 }
 
-/* copy constructor */
-ArrayList copy_array_list(ArrayList* to_copy) {
-  ArrayList a;
+/* copy constructor, performs a deep copy of the underlying data */
+vector copy_vector(const vector* to_copy) {
+  vector a;
   a.elements = to_copy->elements;
   a.array_size = to_copy->array_size;
-  a.data = (TYPE_T*)malloc(STARTING_SIZE * DATA_SIZE);
+  a.data = (TYPE_T*)malloc(STARTING_SIZE * sizeof(TYPE_T));
+  memcpy(a.data, to_copy->data, to_copy->elements * sizeof(TYPE_T)); // destination, source
+  return a;
 }
 
 /* destructor */
-/* note: ALWAYS call this once you're done with the ArrayList to free the memory being used */
-void deleteArrayList(ArrayList *list) {
+/* note: ALWAYS call this once you're done with the vector to free the memory being used */
+void delete_vector(vector *list) {
   free((void*)list->data);
   list->elements = 0;
   list->array_size = 0;
 }
 
-TYPE_T* at(ArrayList* list, int index) {
+/* returns a pointer to the item at the specified index, or NULL if there is an error */
+TYPE_T* at(const vector* list, int index) {
   if ((index >= list->elements) || (index < 0)) {
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
     fprintf(stderr, "Error: index to read item at is not valid.\n");
 #endif
     return NULL;
@@ -56,18 +60,34 @@ TYPE_T* at(ArrayList* list, int index) {
   return &(list->data[index]);
 }
 
-/* add an item to the list (adds to the end) */
-void push_back(ArrayList* list, TYPE_T toAdd) {
+/* add an item to the vector (adds to the end) */
+void push_back(vector* list, TYPE_T to_add) {
   if (list->elements == list->array_size) {
     expand(list);
   }
-  list -> data[list->elements] = toAdd;
+  list -> data[list->elements] = to_add;
   list -> elements++;
+}
+
+/* remove an item from the vector (removes the last one) */
+/* returns 0 if the function was successful, or -1 if there was an error */
+int pop_back(vector* list) {
+  if (list->elements == 0) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "Error: tried to remove from an empty list.\n");
+#endif
+    return -1;
+  }
+  if ((list->elements) - 1 < (list->array_size) / 4) {
+    shrink(list);
+  }
+  list->elements--;
+  return 0;
 }
 
 /* add an item to the list at the index specified */
 /* the item already at that index and all following items are shifted up one index */
-void addItemAt(ArrayList* list, TYPE_T toAdd, int index) {
+/*void addItemAt(vector* list, TYPE_T to_add, int index) {
   if ((index > list->elements) || (index < 0)) {
     fprintf(stderr, "Error: index to add item at is not valid.\n");
     return;
@@ -78,50 +98,51 @@ void addItemAt(ArrayList* list, TYPE_T toAdd, int index) {
   for (int i = (list->elements) - 1; i >= index; i--) {
     list->data[i+1] = list->data[i];
   }
-  list->data[index] = toAdd;
+  list->data[index] = to_add;
   list->elements++;
-}
+}*/
 
-/* remove an item from the list (removes the last one) */
-TYPE_T pop_back(ArrayList* list) {
-  if (list->elements == 0) {
-    fprintf(stderr, "Error: tried to remove from an empty list.\n");
+/* add an item to the vector at the index specified */
+/* returns 0 if the function was successful, or -1 if there was an error */
+int insert_one(vector* list, TYPE_T to_add, int index) {
+  if ((index > list->elements) || (index < 0)) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "Error: index to add item at is not valid.\n");
+#endif
+    return -1;
   }
-  if ((list->elements) - 1 < (list->array_size) / 4) {
-    shrink(list);
+  if (list->elements == list->array_size) {
+    expand(list);
   }
-  TYPE_T result = (list->data)[(list->elements) - 1];
-  list->elements--;
-  return result;
+  for (int i = (list->elements) - 1; i >= index; i--) {
+    list->data[i+1] = list->data[i];
+  }
+  list->data[index] = to_add;
+  list->elements++;
+
+  return 0;
 }
 
 /* removes all items in the range [first, last), including first but not last */
-/* returns true if the function was successful, or false if there was an error */
-// return 0 on success instead? -> return an error enum
-bool erase(ArrayList* list, int first, int last) {
+/* returns 0 if the function was successful, or -1 if there was an error */
+int erase(vector* list, int first, int last) {
   if ((first < 0) || (last <= 0)) {
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
     fprintf(stderr, "Error: index can't be negative.\n");
 #endif
-    return false;
+    return -1;
   }
   if (first >= last) {
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
     fprintf(stderr, "Error: first index is higher than or equal to last index.\n");
 #endif
-    return false;
+    return -1;
   }
   if ((first > list->elements) || (last > list->elements)) {
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
     fprintf(stderr, "Error: one of the arguments is too large.\n");
 #endif
-    return false;
-  }
-  if ((first + last) > list->elements) { // first + last == elements -> error?
-#ifdef ARRAYLIST_DEBUG
-    fprintf(stderr, "Error: range extends past last index.\n");
-#endif
-    return false;
+    return -1;
   }
 
   int remove_length = last - first;
@@ -135,13 +156,17 @@ bool erase(ArrayList* list, int first, int last) {
     shrink(list);
   }
   list->elements = new_size;
-  return true;
+  return 0;
 }
 
 /* removes one item at the specified index */
-/* returns true if the function was successful, or false if there was an error */
-bool erase_one(ArrayList* list, int index) {
+/* returns 0 if the function was successful, or -1 if there was an error */
+int erase_one(vector* list, int index) {
   return erase(list, index, index+1);
+}
+
+void clear(vector* list) {
+  list->elements = 0;
 }
 
 /***********/
@@ -150,11 +175,11 @@ bool erase_one(ArrayList* list, int index) {
 
 /* double the size of the storing array */
 /* called when the storing array is full */
-static void expand(ArrayList* list) {
+static void expand(vector* list) {
   int new_size = (list->array_size) * 2;
-  list->data = (TYPE_T*)realloc((void*)list->data, new_size * DATA_SIZE);
+  list->data = (TYPE_T*)realloc((void*)list->data, new_size * sizeof(TYPE_T));
   if (list->data == 0) {
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
     fprintf(stderr, "Error allocating memory during expand().\n");
 #endif
   }
@@ -163,11 +188,11 @@ static void expand(ArrayList* list) {
 
 /* cut the size of the storing array in half */
 /* called when the storing array is less than 1/4 full */
-static void shrink(ArrayList* list) {
+static void shrink(vector* list) {
   int new_size = (list->array_size) / 2;
-  list->data = (TYPE_T*)realloc((void*)list->data, new_size * DATA_SIZE);
+  list->data = (TYPE_T*)realloc((void*)list->data, new_size * sizeof(TYPE_T));
   if (list->data == 0) {
-#ifdef ARRAYLIST_DEBUG
+#ifdef VECTOR_DEBUG
     fprintf(stderr, "Error allocating memory during shrink().\n");
 #endif
   }
