@@ -8,8 +8,8 @@
 
 #include "vector.h"
 
-static void expand(vector *list);
-static void shrink(vector *list);
+static int expand(vector *list);
+static int shrink(vector *list);
 
 /**********/
 /* PUBLIC */
@@ -61,12 +61,17 @@ TYPE_T* at(const vector* list, int index) {
 }
 
 /* add an item to the vector (adds to the end) */
-void push_back(vector* list, TYPE_T to_add) {
+/* returns 0 if the function was successful, or -1 if there was an error */
+int push_back(vector* list, TYPE_T to_add) {
   if (list->elements == list->array_size) {
-    expand(list);
+    int result = expand(list);
+    if (result == -1) { // expand failed
+      return -1;
+    }
   }
   list -> data[list->elements] = to_add;
   list -> elements++;
+  return 0;
 }
 
 /* remove an item from the vector (removes the last one) */
@@ -85,21 +90,43 @@ int pop_back(vector* list) {
   return 0;
 }
 
-/* add an item to the list at the index specified */
-/* the item already at that index and all following items are shifted up one index */
-/*void addItemAt(vector* list, TYPE_T to_add, int index) {
-  if ((index > list->elements) || (index < 0)) {
-    fprintf(stderr, "Error: index to add item at is not valid.\n");
-    return;
+// insert a slice of one vector into another?
+// insert a slice of an array from one vector into another?
+// insert an entire vector into another?
+
+// using an array instead of a vector is easier but not safe
+
+// how/when will this feature ever be used?
+//  -> adding multpile items at once, want efficiency
+// create new vector -> add it to existing vector: efficient enough or no?
+//  -> it's more efficient than individual inserts for a large enough vector
+//  -> but less efficient than an array
+//  -> and less efficient than individual inserts for small vectors
+
+/* adds an array of items to the vector, starting at the index specified */
+/* returns 0 if the function was successful, or -1 if there was an error */
+// should this add an array to the vector, or a vector to a vector?
+/*int insert(vector* add_to, vector* add_from, int number_to_add, int start_from_index,  int end_index) {
+  if (number_to_add < 1) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "Error: must insert at least one item.\n");
+#endif
+    return -1;
   }
-  if (list->elements == list->array_size) {
-    expand(list);
+  if (start_index < 0) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "Error: cannot insert at a negative index.\n");
+#endif
+    return -1;
   }
-  for (int i = (list->elements) - 1; i >= index; i--) {
-    list->data[i+1] = list->data[i];
+  if (start_index > list->elements) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "Error: start_index is out of bounds.\n");
+#endif
+    return -1;
   }
-  list->data[index] = to_add;
-  list->elements++;
+
+  return 0;
 }*/
 
 /* add an item to the vector at the index specified */
@@ -112,7 +139,10 @@ int insert_one(vector* list, TYPE_T to_add, int index) {
     return -1;
   }
   if (list->elements == list->array_size) {
-    expand(list);
+    int result = expand(list);
+    if (result == -1) { // expand failed
+      return -1;
+    }
   }
   for (int i = (list->elements) - 1; i >= index; i--) {
     list->data[i+1] = list->data[i];
@@ -165,6 +195,14 @@ int erase_one(vector* list, int index) {
   return erase(list, index, index+1);
 }
 
+/* returns true if the list is empty and false otherwise */
+bool is_empty(vector* list) {
+  return list->elements == 0;
+}
+
+/* removes all elements from the list */
+/* unlike delete_vector, this function holds onto the already-allocated buffer, so delete_vector still needs to be */
+/* called when you are done with this vector */
 void clear(vector* list) {
   list->elements = 0;
 }
@@ -175,26 +213,34 @@ void clear(vector* list) {
 
 /* double the size of the storing array */
 /* called when the storing array is full */
-static void expand(vector* list) {
+static int expand(vector* list) {
+  if (list->array_size == 0) {
+#ifdef VECTOR_DEBUG
+    fprintf(stderr, "Error: attempting to use vector after it has been freed.\n");
+#endif
+    return -1;
+  }
   int new_size = (list->array_size) * 2;
   list->data = (TYPE_T*)realloc((void*)list->data, new_size * sizeof(TYPE_T));
-  if (list->data == 0) {
+  if (list->data == NULL) {
 #ifdef VECTOR_DEBUG
     fprintf(stderr, "Error allocating memory during expand().\n");
 #endif
+    return -1;
   }
   list->array_size = new_size;
 }
 
 /* cut the size of the storing array in half */
 /* called when the storing array is less than 1/4 full */
-static void shrink(vector* list) {
+static int shrink(vector* list) {
   int new_size = (list->array_size) / 2;
   list->data = (TYPE_T*)realloc((void*)list->data, new_size * sizeof(TYPE_T));
-  if (list->data == 0) {
+  if (list->data == NULL) {
 #ifdef VECTOR_DEBUG
     fprintf(stderr, "Error allocating memory during shrink().\n");
 #endif
+    return -1;
   }
   list->array_size = new_size;
 }

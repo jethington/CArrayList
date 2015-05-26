@@ -5,6 +5,11 @@
 
 #include "vector.h"
 
+void use_after_delete_test();
+void insert_one_test();
+void clear_test();
+void push_back_test();
+void pop_back_test();
 void erase_test();
 void erase_one_test();
 void at_test();
@@ -12,12 +17,122 @@ void print_vector(vector *list); // this won't work for all types; may have to c
 
 /* main method used for debugging */
 int main(void) {
+  use_after_delete_test();
+  insert_one_test();
+  clear_test();
   at_test();
   erase_test();
   erase_one_test();
+  push_back_test();
+  pop_back_test();
 
-  printf("Success, all tests passed.\n");
+  printf("\nSuccess, all tests passed.\n");
   return EXIT_SUCCESS;
+}
+
+void use_after_delete_test() {
+  vector myList = new_vector();
+  for (int i = 0; i < 10; i++) {
+    push_back(&myList, i+5);
+  }
+  delete_vector(&myList);
+
+  // try removing from empty list, should fail
+  int result = pop_back(&myList);
+  assert(result == -1);
+  result = erase_one(&myList, 0);
+  assert(result == -1);
+
+  // try reading an empty list, should fail
+  assert(at(&myList, 0) == NULL);
+  assert(at(&myList, 1) == NULL);
+
+  // try adding to an empty list, should fail
+  result = push_back(&myList, 42); // crashes
+  assert(result == -1);
+  result = insert_one(&myList, 42, 0);
+  assert(result == -1);
+}
+
+void insert_one_test() {
+  vector myList = new_vector();
+  for (int i = 0; i < 10; i++) {
+    push_back(&myList, i);
+  }
+
+  // insert at the end, in the middle, and the beginning
+  insert_one(&myList, 42, 10); 
+  assert(myList.elements == 11);
+  assert(*at(&myList, 10) == 42);
+  insert_one(&myList, 43, 5);
+  assert(myList.elements == 12);
+  assert(*at(&myList, 5) == 43);
+  insert_one(&myList, 44, 0);
+  assert(myList.elements == 13);
+  assert(*at(&myList, 0) == 44);
+  
+  // insert at invalid index, should fail
+  int result = insert_one(&myList, -1, 45);
+  assert(result == -1);
+  result = insert_one(&myList, 15, 45);
+  assert(result == -1);
+
+  delete_vector(&myList);
+}
+
+void clear_test() {
+  vector myList = new_vector();
+  for (int i = 0; i < 10; i++) {
+    push_back(&myList, i+5);
+  }
+
+  clear(&myList);
+  assert(myList.elements == 0);
+  assert(at(&myList, 0) == NULL);
+
+  // try removing from empty list, should fail
+  int result = pop_back(&myList);
+  assert(result == -1);
+  result = erase_one(&myList, 0);
+  assert(result == -1);
+
+  push_back(&myList, 42);
+  push_back(&myList, 43);
+  push_back(&myList, 44);
+  assert(*at(&myList, 1) == 43);
+  //print_vector(&myList);
+
+  delete_vector(&myList);
+}
+
+void push_back_test() {
+  vector myList = new_vector();
+  for (int i = 0; i < 10; i++) {
+    push_back(&myList, i);
+    assert(myList.data[i] == i);
+  }
+  delete_vector(&myList);
+}
+
+void pop_back_test() {
+  vector myList = new_vector();
+  for (int i = 0; i < 10; i++) {
+    push_back(&myList, i);
+  }
+
+  pop_back(&myList);
+  assert(myList.elements == 9);
+  assert(at(&myList, 9) == NULL);
+  assert(*at(&myList, 8) == 8);
+
+  pop_back(&myList);
+  assert(myList.elements == 8);
+  assert(at(&myList, 8) == NULL);
+  assert(*at(&myList, 7) == 7);
+
+  //print_vector(&myList);
+
+  delete_vector(&myList);
 }
 
 void at_test() {
@@ -116,7 +231,7 @@ void erase_one_test() {
   for (int i = 0; i < max; i++) {
     push_back(&myList, i);
   }
-  print_vector(&myList);
+  //print_vector(&myList);
   erase_one(&myList, 13);
   assert(*at(&myList, 12) == 12);
 

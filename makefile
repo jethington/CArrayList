@@ -1,13 +1,13 @@
 default: vector
 
-vector: ArrayList.o Test.o
-	gcc -std=c99 -o test ArrayList.o Test.o
+vector: vector.o test.o
+	gcc -std=c99 -o test vector.o test.o
 	
-ArrayList.o: ArrayList.c ArrayList.h
-	gcc -std=c99 -c ArrayList.c
+vector.o: vector.c vector.h
+	gcc -std=c99 -c vector.c
 
-Test.o: Test.c ArrayList.h
-	gcc -std=c99 -c Test.c
+test.o: test.c vector.h
+	gcc -std=c99 -c test.c
 	
 clean:
 	rm -f *.o

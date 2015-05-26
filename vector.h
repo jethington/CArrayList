@@ -4,6 +4,8 @@
 #define TYPE_T uint8 // change this to the type you want in your list
 #define STARTING_SIZE 8
 
+#include <stdbool.h>
+
 typedef unsigned char uint8;
 
 typedef struct vector_struct {
@@ -16,11 +18,12 @@ vector new_vector();
 vector copy_vector(const vector* to_copy);
 void delete_vector(vector* list);
 TYPE_T* at(const vector* list, int index);
-void push_back(vector* list, TYPE_T to_add);
+int push_back(vector* list, TYPE_T to_add);
 int insert_one(vector* list, TYPE_T to_add, int start_index);
 int pop_back(vector* list);
 int erase(vector* list, int first, int last);
 int erase_one(vector* list, int index);
+bool is_empty(vector* list);
 void clear(vector* list);
 
 #endif
