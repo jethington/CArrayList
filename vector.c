@@ -1,3 +1,28 @@
+/* Copyright (c) 2014, Jason Ethington
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+
 #define VECTOR_DEBUG
 
 #ifdef VECTOR_DEBUG
@@ -90,44 +115,63 @@ int pop_back(vector* list) {
   return 0;
 }
 
-// insert a slice of one vector into another?
-// insert a slice of an array from one vector into another?
-// insert an entire vector into another?
-
-// using an array instead of a vector is easier but not safe
-
-// how/when will this feature ever be used?
-//  -> adding multpile items at once, want efficiency
-// create new vector -> add it to existing vector: efficient enough or no?
-//  -> it's more efficient than individual inserts for a large enough vector
-//  -> but less efficient than an array
-//  -> and less efficient than individual inserts for small vectors
-
-/* adds an array of items to the vector, starting at the index specified */
+/* inserts one vector into another, starting at the index specified */
+/* ex: Vector A = [0, 1, 2, 3], Vector B = [10, 11, 12] */
+/*     insert(A, B, 2) results in Vector A containing [0, 1, 10, 11, 12, 2, 3] */
 /* returns 0 if the function was successful, or -1 if there was an error */
-// should this add an array to the vector, or a vector to a vector?
-/*int insert(vector* add_to, vector* add_from, int number_to_add, int start_from_index,  int end_index) {
-  if (number_to_add < 1) {
-#ifdef VECTOR_DEBUG
-    fprintf(stderr, "Error: must insert at least one item.\n");
-#endif
-    return -1;
-  }
+
+int insert(vector* add_to, vector* add_from, int start_index) {
   if (start_index < 0) {
 #ifdef VECTOR_DEBUG
     fprintf(stderr, "Error: cannot insert at a negative index.\n");
 #endif
     return -1;
   }
-  if (start_index > list->elements) {
+  if (start_index > add_to->elements) {
 #ifdef VECTOR_DEBUG
     fprintf(stderr, "Error: start_index is out of bounds.\n");
 #endif
     return -1;
   }
 
+	int new_elements = add_to->elements + add_from->elements;
+	if (new_elements < add_to->elements) {
+#ifdef VECTOR_DEBUG
+		fprintf(stderr, "Error: overflow during insert.\n");
+#endif
+		return -1;
+	}
+
+	// expand until add_to vector is large enough to hold all elements
+	// allows exactly filled to capacity, is that a problem?  I think its ok
+	while (add_to->array_size < new_elements) {
+		int result = expand(add_to);
+		if (result == -1) {
+			return -1;
+		}
+	}
+
+  // shift old elements up the appropriate amount
+  int shift = add_from->elements;
+  for (int i = start_index; i < add_to->elements; i++) {
+    add_to->data[i + shift] = add_to->data[i];
+  }
+
+  // fill in new elements
+  for (int i = 0; i < add_from->elements; i++) {
+    add_to->data[start_index + i] = add_from->data[i];
+  }
+
+  add_to->elements = new_elements;
+
+	/*int shift = add_from->elements;
+	for (int i = start_index; i < shift; i++) {
+		add_to->data[start_index+i+shift] = add_to->data[start_index+i];
+		add_to->data[start_index+i] = add_from->data[i]
+	}*/
+
   return 0;
-}*/
+}
 
 /* add an item to the vector at the index specified */
 /* returns 0 if the function was successful, or -1 if there was an error */
@@ -229,6 +273,7 @@ static int expand(vector* list) {
     return -1;
   }
   list->array_size = new_size;
+  return 0;
 }
 
 /* cut the size of the storing array in half */
@@ -243,4 +288,5 @@ static int shrink(vector* list) {
     return -1;
   }
   list->array_size = new_size;
+  return 0;
 }

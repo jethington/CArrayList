@@ -1,3 +1,28 @@
+/* Copyright (c) 2014, Jason Ethington
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -5,6 +30,7 @@
 
 #include "vector.h"
 
+void insert_test();
 void use_after_delete_test();
 void insert_one_test();
 void clear_test();
@@ -17,6 +43,7 @@ void print_vector(vector *list); // this won't work for all types; may have to c
 
 /* main method used for debugging */
 int main(void) {
+  insert_test();
   use_after_delete_test();
   insert_one_test();
   clear_test();
@@ -28,6 +55,40 @@ int main(void) {
 
   printf("\nSuccess, all tests passed.\n");
   return EXIT_SUCCESS;
+}
+
+void insert_test() {
+  vector a = new_vector();
+  for (int i = 0; i <= 3; i++) {
+    push_back(&a, i);
+  }
+  vector b = new_vector();
+  for (int i = 0; i <= 2; i++) {
+    push_back(&b, i + 10);
+  }
+
+  int ret = insert(&a, &b, 2);
+  assert(ret == 0);
+  assert(*at(&a, 2) == 10);
+  assert(*at(&a, 5) == 2);
+  assert(a.elements == 7);
+
+  // insert b larger than a; force a to expand multiple times
+  clear(&b);
+  for (int i = 0; i < 20; i++) {
+    push_back(&b, i + 100);
+  }
+  ret = insert(&a, &b, 5);
+  assert(ret == 0);
+  assert(*at(&a, 2) == 10);
+  assert(*at(&a, 5) == 100);
+  assert(*at(&a, 24) == 119);
+  assert(*at(&a, 25) == 2);
+  assert(a.elements == 27);
+  assert(a.array_size == 32);
+
+  //print_vector(&a);
+  //print_vector(&b);
 }
 
 void use_after_delete_test() {
@@ -61,7 +122,7 @@ void insert_one_test() {
   }
 
   // insert at the end, in the middle, and the beginning
-  insert_one(&myList, 42, 10); 
+  insert_one(&myList, 42, 10);
   assert(myList.elements == 11);
   assert(*at(&myList, 10) == 42);
   insert_one(&myList, 43, 5);
@@ -70,7 +131,7 @@ void insert_one_test() {
   insert_one(&myList, 44, 0);
   assert(myList.elements == 13);
   assert(*at(&myList, 0) == 44);
-  
+
   // insert at invalid index, should fail
   int result = insert_one(&myList, -1, 45);
   assert(result == -1);
