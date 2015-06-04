@@ -41,8 +41,8 @@ void erase_one_test();
 void at_test();
 void print_vector(vector *list); // this won't work for all types; may have to change it for your type
 
-/* main method used for debugging */
-/*int main(void) {
+//main method used for debugging */
+int main(void) {
   insert_test();
   use_after_delete_test();
   insert_one_test();
@@ -341,4 +341,4 @@ void print_vector(vector *list) {
   }
   printf("ELEMENTS:      %d\n", list->elements);
   printf("ARRAY SIZE:    %d\n\n", list->array_size);
-}*/
+}
