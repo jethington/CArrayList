@@ -31,7 +31,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 #include <stdbool.h>
 
+// for running the main tests, use an integer type
+// for use in an application, struct types are fine as well
 typedef unsigned char uint8;
+
+// for running the struct test, which is just to prove that all the assignment operators still work with structs
+// note that struct assignment only performs a shallow copy
+/*typedef struct point {
+  int x;
+  int y;
+} point;*/
 
 typedef struct vector_struct {
   int elements; // number of elements in array

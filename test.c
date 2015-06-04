@@ -42,7 +42,7 @@ void at_test();
 void print_vector(vector *list); // this won't work for all types; may have to change it for your type
 
 /* main method used for debugging */
-int main(void) {
+/*int main(void) {
   insert_test();
   use_after_delete_test();
   insert_one_test();
@@ -87,8 +87,29 @@ void insert_test() {
   assert(a.elements == 27);
   assert(a.array_size == 32);
 
-  //print_vector(&a);
-  //print_vector(&b);
+  // insert starting after end of the other array, leaving a gap: should fail
+  ret = insert(&a, &b, 28);
+  assert(ret == -1);
+
+  // inserting at a negative index: should fail
+  ret = insert(&a, &b, -1);
+  assert(ret == -1);
+
+  vector c = new_vector();
+  push_back(&c, 0);
+  push_back(&c, 0);
+  push_back(&c, 0);
+
+  // insert at very start and very end; both should work
+  ret = insert(&a, &c, 0);
+  assert(ret == 0);
+  ret = insert(&a, &c, a.elements);
+  assert(ret == 0);
+
+  // this should never happen anyways since you would run out of memory first, but just to be safe...
+  c.elements = INT_MAX - 1;
+  ret = insert(&a, &c, 0);
+  assert(ret == -1);
 }
 
 void use_after_delete_test() {
@@ -303,7 +324,7 @@ void erase_one_test() {
   delete_vector(&myList);
 }
 
-/* prints the elements of the list */
+// prints the elements of the list
 void print_vector(vector *list) {
   printf("VECTOR CONTENTS: ");
   int i;
@@ -320,4 +341,4 @@ void print_vector(vector *list) {
   }
   printf("ELEMENTS:      %d\n", list->elements);
   printf("ARRAY SIZE:    %d\n\n", list->array_size);
-}
+}*/
